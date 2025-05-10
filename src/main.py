@@ -2,21 +2,18 @@
 #!/usr/bin/env python3
 """
 Main flow: simulate a Poisson process over many (λ, N) parameter combinations
-and histogram their event times in parallel using Python-level concurrency.
-All parameters except λ and N are fixed.
+and histogram their event times in parallel, with optional fixed or dynamic time horizon,
+and variable bin width (delta) and worker count.
+Only λ, N, tmax (optional), delta, and workers vary per run.
 """
 import argparse
 import sys
 from concurrent.futures import ProcessPoolExecutor
-from typing import List, Tuple
+from typing import List, Tuple, Optional
+import numpy as np
 
 from poisson_sim import PoissonSim
 from histogram import Histogram
-
-# Fixed parameters
-T_MAX = 10.0    # Maximum time horizon for histogram
-DELTA = 1.0     # Width of each histogram bin
-WORKERS = None  # Number of parallel worker processes (None = CPU count)
 
 
 def parse_args():
@@ -31,40 +28,62 @@ def parse_args():
         "--num-events", type=int, nargs='+', required=True,
         help="One or more numbers of events to simulate per rate"
     )
+    parser.add_argument(
+        "--tmax", type=float, default=None,
+        help="Optional fixed maximum time horizon for histogram (dynamic if not set)"
+    )
+    parser.add_argument(
+        "--delta", type=float, default=1.0,
+        help="Width of each histogram bin"
+    )
+    parser.add_argument(
+        "--workers", type=int, default=None,
+        help="Number of parallel worker processes (None = CPU count)"
+    )
     return parser.parse_args()
 
 
-def run_one(params: Tuple[float, int]) -> Tuple[Tuple[float, int], List[int], List[float]]:
+def run_one(params: Tuple[float, int, Optional[float], float]) -> Tuple[Tuple[float, int], float, List[int], List[float]]:
     """
-    Worker function: simulate and histogram for a single (rate, N).
-    Uses fixed T_MAX and DELTA.
-    Returns a tuple ((rate, N), counts, edges).
+    Worker function: simulate for a single (rate, N).
+    If tmax_arg is provided, uses fixed time horizon; otherwise computes dynamic tmax = max(event_times).
+    Bins of width delta.
+    Returns ((rate, N), tmax, counts, edges).
     """
-    rate, N = params
+    rate, N, tmax_arg, delta = params
     sim = PoissonSim(rate=rate, N=N)
     sim.simulate()
     event_times = sim.get_event_times()
 
-    n_bins = int(T_MAX / DELTA)
-    hist = Histogram(bins=n_bins, range=(0.0, T_MAX))
+    # Choose time horizon
+    if tmax_arg is not None:
+        tmax = tmax_arg
+    else:
+        tmax = float(np.max(event_times))
+
+    # Compute bins
+    n_bins = int(np.ceil(tmax / delta))
+    edges = [i * delta for i in range(n_bins + 1)]
+
+    hist = Histogram(bins=edges)
     counts, edges = hist.compute(event_times)
 
-    return (rate, N), counts, edges
+    return (rate, N), tmax, counts, edges
 
 
 def main():
     args = parse_args()
 
-    # Build parameter grid with fixed T_MAX and DELTA
+    # Build parameter grid, include tmax override and delta
     tasks = [
-        (rate, N)
+        (rate, N, args.tmax, args.delta)
         for rate in args.rates
         for N    in args.num_events
     ]
 
-    # Parallel execution
+    # Parallel execution with specified workers
     try:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with ProcessPoolExecutor(max_workers=args.workers) as executor:
             results = list(executor.map(run_one, tasks))
     except Exception as e:
         print(f"Error during parallel execution: {e}", file=sys.stderr)
@@ -72,12 +91,13 @@ def main():
 
     # Output aggregated results
     print("Parallel Poisson Simulation Histogram Results:")
-    print(f"Time horizon: [0, {T_MAX}], Bin width: {DELTA}\n")
-    print(f"{'Rate':>6} {'N':>8} {'Bin Start':>10} {'Bin End':>10} {'Count':>8}")
-    print("" + "-" * 50)
-    for (rate, N), counts, edges in results:
+    print(f"Bin width: {args.delta}\n")
+    header = f"{'Rate':>6} {'N':>8} {'T_max':>8} {'Bin Start':>10} {'Bin End':>10} {'Count':>8}"
+    print(header)
+    print("" + "-" * len(header))
+    for (rate, N), tmax, counts, edges in results:
         for start, end, count in zip(edges[:-1], edges[1:], counts):
-            print(f"{rate:6.2f} {N:8d} {start:10.2f} {end:10.2f} {count:8d}")
+            print(f"{rate:6.2f} {N:8d} {tmax:8.2f} {start:10.2f} {end:10.2f} {count:8d}")
 
 if __name__ == "__main__":
     main()

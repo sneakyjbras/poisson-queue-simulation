@@ -54,21 +54,3 @@ class PoissonSim:
         if self.event_times is None:
             raise RuntimeError("simulate() must be called before accessing event times.")
         return self.event_times
-
-    def counts_per_interval(self, T_max: float, delta: float) -> np.ndarray:
-        """
-        Count the number of events falling into each interval [0, T_max] of width delta.
-
-        :param T_max: The maximum time horizon for intervals.
-        :param delta: The width of each interval.
-        :return: Array of event counts per interval.
-        :raises RuntimeError: If simulate() has not been called yet.
-        """
-        if self.event_times is None:
-            raise RuntimeError("simulate() must be called before counting events.")
-
-        # Define bin edges from 0 to T_max
-        bins = np.arange(0, T_max + delta, delta)
-        counts, _ = np.histogram(self.event_times, bins=bins)
-        return counts
-

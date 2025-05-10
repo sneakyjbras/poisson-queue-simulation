@@ -3,14 +3,16 @@
 """
 Main flow: simulate a Poisson process over many (λ, N) parameter combinations
 and histogram their event times in parallel, with optional fixed or dynamic time horizon,
-and variable bin width (delta), worker count, and optional plot output.
+and variable bin width, worker count, and optional plot output.
 Only λ, N, tmax (optional), delta, workers, and save_plots vary per run.
 """
 import argparse
 import sys
+import os
+from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor
 from typing import List, Tuple, Optional
-import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -66,10 +68,7 @@ def run_one(params: Tuple[float, int, Optional[float], float]) -> Tuple[Tuple[fl
     event_times = sim.get_event_times()
 
     # Choose time horizon
-    if tmax_arg is not None:
-        tmax = tmax_arg
-    else:
-        tmax = float(np.max(event_times))
+    tmax = tmax_arg if tmax_arg is not None else float(np.max(event_times))
 
     # Compute bins
     n_bins = int(np.ceil(tmax / delta))
@@ -103,26 +102,28 @@ def main():
         print(f"Error during parallel execution: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Output aggregated results
-    print("Parallel Poisson Simulation Histogram Results:")
-    print(f"Bin width: {args.delta}\n")
-    header = f"{'Rate':>6} {'N':>8} {'T_max':>8} {'Bin Start':>10} {'Bin End':>10} {'Count':>8}"
-    print(header)
-    print("" + "-" * len(header))
+    # Output results
+    if not args.save_plots:
+        print("Parallel Poisson Simulation Histogram Results:")
+        print(f"Bin width: {args.delta}\n")
+        header = f"{'Rate':>6} {'N':>8} {'T_max':>8} {'Bin Start':>10} {'Bin End':>10} {'Count':>8}"
+        print(header)
+        print("" + "-" * len(header))
+        for (rate, N), tmax, counts, edges in results:
+            for start, end, count in zip(edges[:-1], edges[1:], counts):
+                print(f"{rate:6.2f} {N:8d} {tmax:8.2f} {start:10.2f} {end:10.2f} {count:8d}")
 
-    for (rate, N), tmax, counts, edges in results:
-        # Print textual output
-        for start, end, count in zip(edges[:-1], edges[1:], counts):
-            print(f"{rate:6.2f} {N:8d} {tmax:8.2f} {start:10.2f} {end:10.2f} {count:8d}")
-
-        # Save plot if requested
-        if args.save_plots:
+    # Save plots if requested
+    if args.save_plots:
+        for (rate, N), tmax, counts, edges in results:
+            # Generate timestamped filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             plt.figure()
             plt.bar(edges[:-1], counts, width=args.delta, align='edge')
             plt.xlabel('Time')
             plt.ylabel('Count')
             plt.title(f'Histogram λ={rate}, N={N}, T_max={tmax:.2f}, Δ={args.delta}')
-            filename = f"hist_lambda{rate}_N{N}.png"
+            filename = f"hist_lambda{rate}_N{N}_{timestamp}.png"
             filepath = os.path.join(args.output_dir, filename)
             plt.tight_layout()
             plt.savefig(filepath)

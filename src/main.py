@@ -3,14 +3,16 @@
 """
 Main flow: simulate a Poisson process over many (λ, N) parameter combinations
 and histogram their event times in parallel, with optional fixed or dynamic time horizon,
-and variable bin width (delta) and worker count.
-Only λ, N, tmax (optional), delta, and workers vary per run.
+and variable bin width (delta), worker count, and optional plot output.
+Only λ, N, tmax (optional), delta, workers, and save_plots vary per run.
 """
 import argparse
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from typing import List, Tuple, Optional
+import os
 import numpy as np
+import matplotlib.pyplot as plt
 
 from poisson_sim import PoissonSim
 from histogram import Histogram
@@ -39,6 +41,14 @@ def parse_args():
     parser.add_argument(
         "--workers", type=int, default=None,
         help="Number of parallel worker processes (None = CPU count)"
+    )
+    parser.add_argument(
+        "--save-plots", action='store_true',
+        help="Save histogram plots as PNG images for each (λ, N)"
+    )
+    parser.add_argument(
+        "--output-dir", type=str, default="histograms",
+        help="Directory to save histogram images when --save-plots is set"
     )
     return parser.parse_args()
 
@@ -74,6 +84,10 @@ def run_one(params: Tuple[float, int, Optional[float], float]) -> Tuple[Tuple[fl
 def main():
     args = parse_args()
 
+    # Prepare output directory if saving plots
+    if args.save_plots:
+        os.makedirs(args.output_dir, exist_ok=True)
+
     # Build parameter grid, include tmax override and delta
     tasks = [
         (rate, N, args.tmax, args.delta)
@@ -95,9 +109,25 @@ def main():
     header = f"{'Rate':>6} {'N':>8} {'T_max':>8} {'Bin Start':>10} {'Bin End':>10} {'Count':>8}"
     print(header)
     print("" + "-" * len(header))
+
     for (rate, N), tmax, counts, edges in results:
+        # Print textual output
         for start, end, count in zip(edges[:-1], edges[1:], counts):
             print(f"{rate:6.2f} {N:8d} {tmax:8.2f} {start:10.2f} {end:10.2f} {count:8d}")
+
+        # Save plot if requested
+        if args.save_plots:
+            plt.figure()
+            plt.bar(edges[:-1], counts, width=args.delta, align='edge')
+            plt.xlabel('Time')
+            plt.ylabel('Count')
+            plt.title(f'Histogram λ={rate}, N={N}, T_max={tmax:.2f}, Δ={args.delta}')
+            filename = f"hist_lambda{rate}_N{N}.png"
+            filepath = os.path.join(args.output_dir, filename)
+            plt.tight_layout()
+            plt.savefig(filepath)
+            plt.close()
+            print(f"Saved histogram plot: {filepath}")
 
 if __name__ == "__main__":
     main()

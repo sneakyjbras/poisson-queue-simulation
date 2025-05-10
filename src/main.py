@@ -2,8 +2,8 @@
 #!/usr/bin/env python3
 """
 Main flow: simulate a Poisson process over many (λ, N) parameter combinations
-and histogram their event times in parallel, with optional fixed or dynamic time horizon,
-and variable bin width, worker count, and optional plot output.
+and histogram their event-time counts, comparing empirical vs theoretical.
+Uses a mock simulation function in PoissonSim for now.
 Only λ, N, tmax (optional), delta, workers, and save_plots vary per run.
 """
 import argparse
@@ -15,8 +15,9 @@ from typing import List, Tuple, Optional
 
 import numpy as np
 import matplotlib.pyplot as plt
+from math import exp, factorial
 
-from poisson_sim import PoissonSim
+from poisson_sim import PoissonSim  # expects a mock_simulate method
 from histogram import Histogram
 
 
@@ -46,7 +47,7 @@ def parse_args():
     )
     parser.add_argument(
         "--save-plots", action='store_true',
-        help="Save histogram plots as PNG images for each (λ, N)"
+        help="Save histogram and distribution comparison plots as PNG images for each (λ, N)"
     )
     parser.add_argument(
         "--output-dir", type=str, default="histograms",
@@ -55,16 +56,22 @@ def parse_args():
     return parser.parse_args()
 
 
+def poisson_pmf(k: int, mu: float) -> float:
+    """Compute the Poisson probability mass function."""
+    return (mu ** k) * exp(-mu) / factorial(k)
+
+
 def run_one(params: Tuple[float, int, Optional[float], float]) -> Tuple[Tuple[float, int], float, List[int], List[float]]:
     """
-    Worker function: simulate for a single (rate, N).
+    Worker function: simulate for a single (rate, N) using a mock simulate.
     If tmax_arg is provided, uses fixed time horizon; otherwise computes dynamic tmax = max(event_times).
     Bins of width delta.
     Returns ((rate, N), tmax, counts, edges).
     """
     rate, N, tmax_arg, delta = params
     sim = PoissonSim(rate=rate, N=N)
-    sim.simulate()
+    # Use a mock simulation method for now
+    sim.mock_simulate()
     event_times = sim.get_event_times()
 
     # Choose time horizon
@@ -87,14 +94,14 @@ def main():
     if args.save_plots:
         os.makedirs(args.output_dir, exist_ok=True)
 
-    # Build parameter grid, include tmax override and delta
+    # Build parameter grid
     tasks = [
         (rate, N, args.tmax, args.delta)
         for rate in args.rates
-        for N    in args.num_events
+        for N in args.num_events
     ]
 
-    # Parallel execution with specified workers
+    # Run in parallel
     try:
         with ProcessPoolExecutor(max_workers=args.workers) as executor:
             results = list(executor.map(run_one, tasks))
@@ -102,33 +109,35 @@ def main():
         print(f"Error during parallel execution: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Output results
+    # Print or save
     if not args.save_plots:
-        print("Parallel Poisson Simulation Histogram Results:")
-        print(f"Bin width: {args.delta}\n")
-        header = f"{'Rate':>6} {'N':>8} {'T_max':>8} {'Bin Start':>10} {'Bin End':>10} {'Count':>8}"
-        print(header)
-        print("" + "-" * len(header))
+        print("Results (empirical vs theoretical counts per bin):")
         for (rate, N), tmax, counts, edges in results:
-            for start, end, count in zip(edges[:-1], edges[1:], counts):
-                print(f"{rate:6.2f} {N:8d} {tmax:8.2f} {start:10.2f} {end:10.2f} {count:8d}")
+            print(f"λ={rate}, N={N}, t_max={tmax:.2f}")
+            print(counts)
 
-    # Save plots if requested
     if args.save_plots:
         for (rate, N), tmax, counts, edges in results:
-            # Generate timestamped filename
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # empirical frequency of counts
+            values, freqs = np.unique(counts, return_counts=True)
+            mu = rate * args.delta
+            theo = [poisson_pmf(k, mu) * len(counts) for k in values]
+
             plt.figure()
-            plt.bar(edges[:-1], counts, width=args.delta, align='edge')
-            plt.xlabel('Time')
-            plt.ylabel('Count')
-            plt.title(f'Histogram λ={rate}, N={N}, T_max={tmax:.2f}, Δ={args.delta}')
-            filename = f"hist_lambda{rate}_N{N}_{timestamp}.png"
-            filepath = os.path.join(args.output_dir, filename)
+            plt.bar(values, freqs, width=0.6, alpha=0.7, label='Empirical')
+            plt.plot(values, theo, marker='o', linestyle='-', label='Theoretical')
+            plt.xlabel('Events per interval')
+            plt.ylabel('Frequency')
+            plt.title(f'λ={rate}, N={N}, Δ={args.delta}')
+            plt.legend()
+
+            ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+            fname = f"hist_vs_poisson_l{rate}_N{N}_{ts}.png"
+            path = os.path.join(args.output_dir, fname)
             plt.tight_layout()
-            plt.savefig(filepath)
+            plt.savefig(path)
             plt.close()
-            print(f"Saved histogram plot: {filepath}")
+            print(f"Saved plot: {path}")
 
 if __name__ == "__main__":
     main()

@@ -71,7 +71,8 @@ def run_one(params: Tuple[float, int, Optional[float], float]) -> Tuple[Tuple[fl
     rate, N, tmax_arg, delta = params
     sim = PoissonSim(rate=rate, N=N)
     # Use a mock simulation method for now
-    sim.mock_simulate()
+    sim.simulate()
+    # Get the event times from 
     event_times = sim.get_event_times()
 
     # Choose time horizon

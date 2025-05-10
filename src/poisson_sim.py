@@ -20,6 +20,7 @@ class PoissonSim:
         # Attributes set after simulation
         self.u: Optional[np.ndarray] = None
         self.dts: Optional[np.ndarray] = None
+        self.event_times: Optional[np.ndarray] = None
 
     def simulate(self) -> None:
         """
@@ -29,6 +30,8 @@ class PoissonSim:
         self.u = np.random.rand(self.N)
         # Transform to exponential inter-arrival times
         self.dts = -np.log(1 - self.u) / self.rate
+        # Cumulative sum to get event times
+        self.event_times = np.cumsum(self.dts)
 
     def get_inter_arrivals(self) -> np.ndarray:
         """
@@ -40,3 +43,32 @@ class PoissonSim:
         if self.dts is None:
             raise RuntimeError("simulate() must be called before accessing inter-arrival times.")
         return self.dts
+
+    def get_event_times(self) -> np.ndarray:
+        """
+        Get the cumulative event times.
+
+        :return: Array of event times of length N.
+        :raises RuntimeError: If simulate() has not been called yet.
+        """
+        if self.event_times is None:
+            raise RuntimeError("simulate() must be called before accessing event times.")
+        return self.event_times
+
+    def counts_per_interval(self, T_max: float, delta: float) -> np.ndarray:
+        """
+        Count the number of events falling into each interval [0, T_max] of width delta.
+
+        :param T_max: The maximum time horizon for intervals.
+        :param delta: The width of each interval.
+        :return: Array of event counts per interval.
+        :raises RuntimeError: If simulate() has not been called yet.
+        """
+        if self.event_times is None:
+            raise RuntimeError("simulate() must be called before counting events.")
+
+        # Define bin edges from 0 to T_max
+        bins = np.arange(0, T_max + delta, delta)
+        counts, _ = np.histogram(self.event_times, bins=bins)
+        return counts
+

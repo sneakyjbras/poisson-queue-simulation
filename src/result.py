@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from typing import List
 
+
 @dataclass
 class Result:
     """
@@ -14,6 +15,7 @@ class Result:
         counts: Counts per interval (length = num_intervals).
         edges: Bin edges of the histogram.
     """
+
     rate: float
     N: int
     tmax: float

@@ -1,14 +1,16 @@
 # manager.py
 import os
-from concurrent.futures import ProcessPoolExecutor, Future
-from typing import List, Tuple
-import numpy as np
+from concurrent.futures import Future, ProcessPoolExecutor
 from math import ceil
+from typing import List, Tuple
 
-from poisson_sim import PoissonSim
-from histogram import Histogram
+import numpy as np
+
 from config import Config
+from histogram import Histogram
+from poisson_sim import PoissonSim
 from result import Result
+
 
 class SimulationManager:
     """
@@ -38,7 +40,11 @@ class SimulationManager:
         event_times: List[float] = sim.get_event_times()
 
         # Determine tmax and bin edges
-        tmax: float = self.config.tmax if self.config.tmax is not None else float(np.max(event_times))
+        tmax: float = (
+            self.config.tmax
+            if self.config.tmax is not None
+            else float(np.max(event_times))
+        )
         tmax = ceil(tmax / self.config.delta) * self.config.delta
         num_intervals: int = int(tmax / self.config.delta)
         edges: List[float] = [i * self.config.delta for i in range(num_intervals + 1)]
@@ -66,11 +72,15 @@ class SimulationManager:
             with ProcessPoolExecutor(max_workers=self.config.workers) as executor:
                 for N in self.config.num_events:
                     # Simulate N events for each rate in parallel
-                    futures = [executor.submit(SimulationManager.simulate_process, rate, N)
-                               for rate in self.config.rates]
+                    futures = [
+                        executor.submit(SimulationManager.simulate_process, rate, N)
+                        for rate in self.config.rates
+                    ]
                     event_time_lists = [future.result() for future in futures]
                     # Determine shortest time horizon across all processes
-                    final_times = [times[-1] for times in event_time_lists if len(times) > 0]
+                    final_times = [
+                        times[-1] for times in event_time_lists if len(times) > 0
+                    ]
                     if final_times:
                         T_max = float(np.min(final_times))
                     else:
@@ -96,7 +106,9 @@ class SimulationManager:
                     # Compute bin edges from 0 to tmax with bin width delta
                     if tmax > 0:
                         num_full_bins = int(tmax // self.config.delta)
-                        edges = [i * self.config.delta for i in range(num_full_bins + 1)]
+                        edges = [
+                            i * self.config.delta for i in range(num_full_bins + 1)
+                        ]
                         if len(edges) == 0 or edges[0] != 0.0:
                             edges.insert(0, 0.0)
                         if edges[-1] < tmax:
@@ -109,5 +121,7 @@ class SimulationManager:
                     # Prepare Result with summed rate and combined event count (events ≤ horizon)
                     total_rate = float(np.sum(self.config.rates))
                     total_events = len(truncated_times)
-                    results.append(Result(total_rate, total_events, tmax, counts, edges))
+                    results.append(
+                        Result(total_rate, total_events, tmax, counts, edges)
+                    )
         return results

@@ -3,11 +3,12 @@
 """
 Entry point: parses CLI, runs simulations, and delegates to Plotter.
 """
+from typing import List
+
 from config import Config
 from manager import SimulationManager
 from plotter import Plotter
 from result import Result  # Assuming this exists for type hinting
-from typing import List
 
 
 def main() -> None:
@@ -24,5 +25,5 @@ def main() -> None:
             print(res)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

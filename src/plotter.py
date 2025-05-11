@@ -1,13 +1,15 @@
 # plotter.py
 import os
-import numpy as np
-import matplotlib.pyplot as plt
 from datetime import datetime
 from math import exp, factorial
 from typing import List
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 from config import Config
 from result import Result
+
 
 class Plotter:
     """
@@ -26,7 +28,7 @@ class Plotter:
         """
         Compute the Poisson probability mass function at k given mean mu.
         """
-        return (mu ** k) * exp(-mu) / factorial(k)
+        return (mu**k) * exp(-mu) / factorial(k)
 
     def plot_count_dist(self, result: Result) -> None:
         """
@@ -38,18 +40,29 @@ class Plotter:
 
         num_intervals: int = len(result.counts)
         mu: float = result.rate * self.config.delta
-        theo_freqs: List[float] = [num_intervals * self.poisson_pmf(int(k), mu) for k in values]
+        theo_freqs: List[float] = [
+            num_intervals * self.poisson_pmf(int(k), mu) for k in values
+        ]
 
         plt.figure()
-        plt.bar(values, freqs, width=0.8, alpha=0.6, color='royalblue', label='Empirical')
-        plt.plot(values, theo_freqs, marker='o', linestyle='-', color='salmon', label='Theoretical')
-        plt.xlabel('Events per interval')
-        plt.ylabel('Number of intervals')
-        plt.title(f'λ={result.rate}, N={result.N}')
+        plt.bar(
+            values, freqs, width=0.8, alpha=0.6, color="royalblue", label="Empirical"
+        )
+        plt.plot(
+            values,
+            theo_freqs,
+            marker="o",
+            linestyle="-",
+            color="salmon",
+            label="Theoretical",
+        )
+        plt.xlabel("Events per interval")
+        plt.ylabel("Number of intervals")
+        plt.title(f"λ={result.rate}, N={result.N}")
         plt.legend()
 
         if self.config.save_plots:
-            ts: str = datetime.now().strftime('%Y%m%d_%H%M%S')
+            ts: str = datetime.now().strftime("%Y%m%d_%H%M%S")
             fn: str = f"hist_vs_poisson_l{result.rate}_N{result.N}_{ts}.png"
             path: str = os.path.join(self.config.output_dir, fn)
             plt.tight_layout()

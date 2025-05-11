@@ -1,5 +1,5 @@
 from bisect import bisect_right
-from typing import Sequence, List, Tuple, Union, Optional
+from typing import List, Optional, Sequence, Tuple, Union
 
 
 class Histogram:
@@ -15,7 +15,7 @@ class Histogram:
     def __init__(
         self,
         bins: Union[int, Sequence[float]] = 10,
-        range: Optional[Tuple[float, float]] = None
+        range: Optional[Tuple[float, float]] = None,
     ) -> None:
         """
         Initialize the Histogram.
@@ -26,10 +26,7 @@ class Histogram:
         self.bins = bins
         self.range = range
 
-    def compute(
-        self,
-        data: Sequence[float]
-    ) -> Tuple[List[int], List[float]]:
+    def compute(self, data: Sequence[float]) -> Tuple[List[int], List[float]]:
         """
         Compute the histogram for the given data.
 

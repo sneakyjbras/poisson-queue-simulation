@@ -1,5 +1,7 @@
 from typing import Optional
+
 import numpy as np
+
 
 class PoissonSim:
     """
@@ -42,7 +44,9 @@ class PoissonSim:
         :raises RuntimeError: If simulate() has not been called yet.
         """
         if self.dts is None:
-            raise RuntimeError("simulate() must be called before accessing inter-arrival times.")
+            raise RuntimeError(
+                "simulate() must be called before accessing inter-arrival times."
+            )
         return self.dts
 
     def get_event_times(self) -> np.ndarray:
@@ -53,5 +57,7 @@ class PoissonSim:
         :raises RuntimeError: If simulate() has not been called yet.
         """
         if self.event_times is None:
-            raise RuntimeError("simulate() must be called before accessing event times.")
+            raise RuntimeError(
+                "simulate() must be called before accessing event times."
+            )
         return self.event_times

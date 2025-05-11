@@ -3,7 +3,7 @@
 """
 Main flow: simulate a Poisson process over many (λ, N) parameter combinations
 and histogram their event-time counts, comparing empirical vs theoretical.
-Uses a mock simulation function in PoissonSim for now.
+Includes clean unit-interval bins and varied RNG.
 Only λ, N, tmax (optional), delta, workers, and save_plots vary per run.
 """
 import argparse
@@ -15,9 +15,9 @@ from typing import List, Tuple, Optional
 
 import numpy as np
 import matplotlib.pyplot as plt
-from math import exp, factorial
+from math import exp, factorial, ceil
 
-from poisson_sim import PoissonSim  # expects a mock_simulate method
+from poisson_sim import PoissonSim
 from histogram import Histogram
 
 
@@ -39,7 +39,7 @@ def parse_args():
     )
     parser.add_argument(
         "--delta", type=float, default=1.0,
-        help="Width of each histogram bin"
+        help="Width of each histogram bin (unit interval by default)"
     )
     parser.add_argument(
         "--workers", type=int, default=None,
@@ -63,25 +63,29 @@ def poisson_pmf(k: int, mu: float) -> float:
 
 def run_one(params: Tuple[float, int, Optional[float], float]) -> Tuple[Tuple[float, int], float, List[int], List[float]]:
     """
-    Worker function: simulate for a single (rate, N) using a mock simulate.
-    If tmax_arg is provided, uses fixed time horizon; otherwise computes dynamic tmax = max(event_times).
-    Bins of width delta.
-    Returns ((rate, N), tmax, counts, edges).
+    Worker: simulate (rate,N), histogram counts per unit interval,
+    compare to theoretical Poisson distribution.
+    Returns ((rate,N), tmax, counts, edges).
     """
     rate, N, tmax_arg, delta = params
+    # simulate process
     sim = PoissonSim(rate=rate, N=N)
-    # Use a mock simulation method for now
     sim.simulate()
-    # Get the event times from 
     event_times = sim.get_event_times()
 
-    # Choose time horizon
-    tmax = tmax_arg if tmax_arg is not None else float(np.max(event_times))
+    # determine time horizon
+    if tmax_arg is not None:
+        tmax = tmax_arg
+    else:
+        tmax = float(np.max(event_times))
+    # round up to next full bin
+    tmax = ceil(tmax / delta) * delta
 
-    # Compute bins
-    n_bins = int(np.ceil(tmax / delta))
-    edges = [i * delta for i in range(n_bins + 1)]
+    # edges from 0 to tmax in steps of delta
+    num_intervals = int(tmax / delta)
+    edges = [i * delta for i in range(num_intervals + 1)]
 
+    # empirical counts per interval
     hist = Histogram(bins=edges)
     counts, edges = hist.compute(event_times)
 
@@ -90,62 +94,45 @@ def run_one(params: Tuple[float, int, Optional[float], float]) -> Tuple[Tuple[fl
 
 def main():
     args = parse_args()
-
-    # Prepare output directory if saving plots
     if args.save_plots:
         os.makedirs(args.output_dir, exist_ok=True)
 
-    # Build parameter grid
-    tasks = [
-        (rate, N, args.tmax, args.delta)
-        for rate in args.rates
-        for N in args.num_events
-    ]
+    # build tasks
+    tasks = [(r, n, args.tmax, args.delta) for r in args.rates for n in args.num_events]
 
-    # Run in parallel
-    try:
-        with ProcessPoolExecutor(max_workers=args.workers) as executor:
-            results = list(executor.map(run_one, tasks))
-    except Exception as e:
-        print(f"Error during parallel execution: {e}", file=sys.stderr)
-        sys.exit(1)
+    with ProcessPoolExecutor(max_workers=args.workers) as exe:
+        results = list(exe.map(run_one, tasks))
 
-    # Print or save
+    # textual output if no plots
     if not args.save_plots:
-        print("Results (empirical vs theoretical counts per bin):")
         for (rate, N), tmax, counts, edges in results:
-            print(f"λ={rate}, N={N}, t_max={tmax:.2f}")
+            print(f"λ={rate}, N={N}, tmax={tmax}")
             print(counts)
 
+    # save overlay plots
     if args.save_plots:
         for (rate, N), tmax, counts, edges in results:
-            # 1) Build empirical histogram of counts-per-bin
             values, freqs = np.unique(counts, return_counts=True)
-            n_bins = len(counts)
-
-            # 2) Compute theoretical frequencies:
-            #    expected #bins with k events = n_bins * P(Pois(λΔ)=k)
+            num_intervals = len(counts)
             mu = rate * args.delta
-            theo_freqs = [n_bins * poisson_pmf(k, mu) for k in values]
+            theo_freqs = [num_intervals * poisson_pmf(k, mu) for k in values]
 
-            # 3) Plot empirical vs. theoretical
             plt.figure()
-            plt.bar(values, freqs, width=0.6, alpha=0.7, label='Empirical')
+            plt.bar(values, freqs, width=0.8, alpha=0.6, label='Empirical')
             plt.plot(values, theo_freqs, marker='o', linestyle='-', label='Theoretical')
             plt.xlabel('Events per interval')
-            plt.ylabel('Number of bins')
+            plt.ylabel('Number of intervals')
             plt.title(f'λ={rate}, N={N}, Δ={args.delta}')
             plt.legend()
 
-            # 4) Save with timestamped filename
             ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-            fname = f"hist_vs_poisson_l{rate}_N{N}_{ts}.png"
-            path = os.path.join(args.output_dir, fname)
+            fn = f"hist_vs_poisson_l{rate}_N{N}_{ts}.png"
+            path = os.path.join(args.output_dir, fn)
             plt.tight_layout()
             plt.savefig(path)
             plt.close()
             print(f"Saved plot: {path}")
- 
+
 if __name__ == "__main__":
     main()
 

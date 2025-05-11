@@ -119,19 +119,25 @@ def main():
 
     if args.save_plots:
         for (rate, N), tmax, counts, edges in results:
-            # empirical frequency of counts
+            # 1) Build empirical histogram of counts-per-bin
             values, freqs = np.unique(counts, return_counts=True)
-            mu = rate * args.delta
-            theo = [poisson_pmf(k, mu) * len(counts) for k in values]
+            n_bins = len(counts)
 
+            # 2) Compute theoretical frequencies:
+            #    expected #bins with k events = n_bins * P(Pois(λΔ)=k)
+            mu = rate * args.delta
+            theo_freqs = [n_bins * poisson_pmf(k, mu) for k in values]
+
+            # 3) Plot empirical vs. theoretical
             plt.figure()
             plt.bar(values, freqs, width=0.6, alpha=0.7, label='Empirical')
-            plt.plot(values, theo, marker='o', linestyle='-', label='Theoretical')
+            plt.plot(values, theo_freqs, marker='o', linestyle='-', label='Theoretical')
             plt.xlabel('Events per interval')
-            plt.ylabel('Frequency')
+            plt.ylabel('Number of bins')
             plt.title(f'λ={rate}, N={N}, Δ={args.delta}')
             plt.legend()
 
+            # 4) Save with timestamped filename
             ts = datetime.now().strftime('%Y%m%d_%H%M%S')
             fname = f"hist_vs_poisson_l{rate}_N{N}_{ts}.png"
             path = os.path.join(args.output_dir, fname)
@@ -139,7 +145,7 @@ def main():
             plt.savefig(path)
             plt.close()
             print(f"Saved plot: {path}")
-
+ 
 if __name__ == "__main__":
     main()
 

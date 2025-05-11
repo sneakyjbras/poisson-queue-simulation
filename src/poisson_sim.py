@@ -1,41 +1,56 @@
+from typing import Optional
 import numpy as np
-from numpy.typing import NDArray
+
 
 class PoissonSim:
-    def __init__(self, lambda_poisson: float, N: int):
-        """
-        Parameters
-        ----------
-        lambda_poisson : float
-            Rate parameter (events per unit time) for the Poisson process.
-        N : int
-            Number of events to simulate.
-        """
-        self.lambda_poisson: float = lambda_poisson
-        self.N: int = N
+    """
+    Simulates a Poisson process by generating inter-arrival times
+    and cumulative event times using a given rate (lambda).
+    """
 
-        # Will be filled by simulate()
-        self.u:    NDArray[np.float64]
-        self.dts:  NDArray[np.float64]
-        self.event_times: NDArray[np.float64]
+    def __init__(self, rate: float, N: int) -> None:
+        """
+        Initialize the simulator.
+
+        :param rate: The rate (lambda) of the Poisson process.
+        :param N: The number of events to simulate.
+        """
+        self.rate: float = rate
+        self.N: int = N
+        # Attributes set after simulation
+        self.u: Optional[np.ndarray] = None
+        self.dts: Optional[np.ndarray] = None
+        self.event_times: Optional[np.ndarray] = None
 
     def simulate(self) -> None:
         """
-        Run the simulation: generate uniforms, transform to exponential
-        inter-arrival times, and compute event timestamps.
+        Perform the simulation of inter-arrival times and event times.
         """
-        # 1) draw N uniforms
+        # Generate uniform random numbers
         self.u = np.random.rand(self.N)
-        # 2) inverse‐CDF → exponential gaps
-        self.dts = -np.log(1 - self.u) / self.lambda_poisson
-        # 3) cumulative sum → arrival times
+        # Transform to exponential inter-arrival times
+        self.dts = -np.log(1 - self.u) / self.rate
+        # Cumulative sum to get event times
         self.event_times = np.cumsum(self.dts)
 
-    def get_event_times(self) -> NDArray[np.float64]:
-        """Return the array of simulated event timestamps."""
-        return self.event_times
+    def get_inter_arrivals(self) -> np.ndarray:
+        """
+        Get the simulated inter-arrival times.
 
-    def get_inter_arrivals(self) -> NDArray[np.float64]:
-        """Return the array of simulated inter-arrival times."""
+        :return: Array of inter-arrival times of length N.
+        :raises RuntimeError: If simulate() has not been called yet.
+        """
+        if self.dts is None:
+            raise RuntimeError("simulate() must be called before accessing inter-arrival times.")
         return self.dts
 
+    def get_event_times(self) -> np.ndarray:
+        """
+        Get the cumulative event times.
+
+        :return: Array of event times of length N.
+        :raises RuntimeError: If simulate() has not been called yet.
+        """
+        if self.event_times is None:
+            raise RuntimeError("simulate() must be called before accessing event times.")
+        return self.event_times

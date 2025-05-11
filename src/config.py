@@ -24,6 +24,7 @@ class Config:
     workers: Optional[int]
     save_plots: bool
     output_dir: str
+    superimpose: bool
 
     @staticmethod
     def from_cli() -> 'Config':
@@ -44,6 +45,7 @@ class Config:
                             help='Save histogram and overlay plots')
         parser.add_argument('--output-dir', type=str, default='histograms',
                             help='Output directory for saved plots')
+        parser.add_argument('--superimpose', action='store_true',  help='Enable superposition: combine multiple processes into one simulation')
         args = parser.parse_args()
         return Config(
             rates=args.rates,
@@ -52,5 +54,6 @@ class Config:
             delta=args.delta,
             workers=args.workers,
             save_plots=args.save_plots,
-            output_dir=args.output_dir
+            output_dir=args.output_dir,
+            superimpose=args.superimpose
         )

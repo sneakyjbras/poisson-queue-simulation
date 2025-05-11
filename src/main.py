@@ -6,7 +6,7 @@ Entry point: parses CLI, runs simulations, and delegates to Plotter.
 from config import Config
 from manager import SimulationManager
 from plotter import Plotter
-from result import SimulationResult  # Assuming this exists for type hinting
+from result import Result  # Assuming this exists for type hinting
 from typing import List
 
 

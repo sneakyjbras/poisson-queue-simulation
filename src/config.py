@@ -54,4 +54,3 @@ class Config:
             save_plots=args.save_plots,
             output_dir=args.output_dir
         )
-

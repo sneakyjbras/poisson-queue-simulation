@@ -1,0 +1,13 @@
+repos:
+  - repo: git@github.com:pycqa/isort.git
+    rev: 6.0.1
+    hooks:
+      - id: isort
+        args: ["--profile=black"]
+
+  - repo: https://github.com/psf/black
+    rev: 25.1.0               # latest release tag
+    hooks:
+      - id: black
+        language_version: python3
+

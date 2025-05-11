@@ -111,7 +111,7 @@ def main() -> None:
             print(f"λ={rate}, N={N}, tmax={tmax}")
             print(counts)
 
-    # save overlay plots
+        # save overlay plots
     if args.save_plots:
         for (rate, N), tmax, counts, edges in results:
             values, freqs = np.unique(counts, return_counts=True)
@@ -126,7 +126,7 @@ def main() -> None:
                 width=0.8,
                 alpha=0.6,
                 label='Empirical',
-                color='lightsteelblue'  # pastel/navy-ish color
+                color='royalblue'  # pastel/navy-ish color
             )
             plt.plot(
                 values,
@@ -138,7 +138,10 @@ def main() -> None:
             )
             plt.xlabel('Events per interval')
             plt.ylabel('Number of intervals')
-                        plt.title(f'λ={rate}, N={N}')
+            plt.title(f'λ={rate}, N={N}')
+            plt.legend()
+
+            ts: str = datetime.now().strftime('%Y%m%d_%H%M%S')
             fn: str = f"hist_vs_poisson_l{rate}_N{N}_{ts}.png"
             path: str = os.path.join(args.output_dir, fn)
             plt.tight_layout()
@@ -147,4 +150,4 @@ def main() -> None:
             print(f"Saved plot: {path}")
 
 if __name__ == "__main__":
-    main()
+    main() == "__main__"

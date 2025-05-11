@@ -1,12 +1,17 @@
 from typing import Optional
 import numpy as np
 
-
 class PoissonSim:
     """
     Simulates a Poisson process by generating inter-arrival times
     and cumulative event times using a given rate (lambda).
     """
+
+    rate: float
+    N: int
+    u: Optional[np.ndarray]
+    dts: Optional[np.ndarray]
+    event_times: Optional[np.ndarray]
 
     def __init__(self, rate: float, N: int) -> None:
         """
@@ -15,22 +20,18 @@ class PoissonSim:
         :param rate: The rate (lambda) of the Poisson process.
         :param N: The number of events to simulate.
         """
-        self.rate: float = rate
-        self.N: int = N
-        # Attributes set after simulation
-        self.u: Optional[np.ndarray] = None
-        self.dts: Optional[np.ndarray] = None
-        self.event_times: Optional[np.ndarray] = None
+        self.rate = rate
+        self.N = N
+        self.u = None
+        self.dts = None
+        self.event_times = None
 
     def simulate(self) -> None:
         """
         Perform the simulation of inter-arrival times and event times.
         """
-        # Generate uniform random numbers
         self.u = np.random.rand(self.N)
-        # Transform to exponential inter-arrival times
         self.dts = -np.log(1 - self.u) / self.rate
-        # Cumulative sum to get event times
         self.event_times = np.cumsum(self.dts)
 
     def get_inter_arrivals(self) -> np.ndarray:

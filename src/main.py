@@ -1,4 +1,4 @@
-# main.py
+# src/main.py
 #!/usr/bin/env python3
 """
 Main flow: simulate a Poisson process over many (λ, N) parameter combinations
@@ -11,7 +11,7 @@ import sys
 import os
 from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Any
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,7 +21,7 @@ from poisson_sim import PoissonSim
 from histogram import Histogram
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Simulate Poisson processes for multiple (rate, num-events) combos in parallel."
     )
@@ -68,40 +68,42 @@ def run_one(params: Tuple[float, int, Optional[float], float]) -> Tuple[Tuple[fl
     Returns ((rate,N), tmax, counts, edges).
     """
     rate, N, tmax_arg, delta = params
-    # simulate process
-    sim = PoissonSim(rate=rate, N=N)
+    sim: PoissonSim = PoissonSim(rate=rate, N=N)
     sim.simulate()
-    event_times = sim.get_event_times()
+    event_times: np.ndarray = sim.get_event_times()
 
     # determine time horizon
     if tmax_arg is not None:
-        tmax = tmax_arg
+        tmax: float = tmax_arg
     else:
         tmax = float(np.max(event_times))
-    # round up to next full bin
     tmax = ceil(tmax / delta) * delta
 
     # edges from 0 to tmax in steps of delta
-    num_intervals = int(tmax / delta)
-    edges = [i * delta for i in range(num_intervals + 1)]
+    num_intervals: int = int(tmax / delta)
+    edges: List[float] = [i * delta for i in range(num_intervals + 1)]
 
     # empirical counts per interval
-    hist = Histogram(bins=edges)
+    hist: Histogram = Histogram(bins=edges)
     counts, edges = hist.compute(event_times)
 
     return (rate, N), tmax, counts, edges
 
 
-def main():
-    args = parse_args()
+def main() -> None:
+    args: Any = parse_args()
     if args.save_plots:
         os.makedirs(args.output_dir, exist_ok=True)
 
     # build tasks
-    tasks = [(r, n, args.tmax, args.delta) for r in args.rates for n in args.num_events]
+    tasks: List[Tuple[float, int, Optional[float], float]] = [
+        (r, n, args.tmax, args.delta)
+        for r in args.rates
+        for n in args.num_events
+    ]
 
-    with ProcessPoolExecutor(max_workers=args.workers) as exe:
-        results = list(exe.map(run_one, tasks))
+    with ProcessPoolExecutor(max_workers=args.workers) as executor:
+        results = list(executor.map(run_one, tasks))
 
     # textual output if no plots
     if not args.save_plots:
@@ -109,30 +111,43 @@ def main():
             print(f"λ={rate}, N={N}, tmax={tmax}")
             print(counts)
 
-    # save overlay plots
+        # save overlay plots
     if args.save_plots:
         for (rate, N), tmax, counts, edges in results:
             values, freqs = np.unique(counts, return_counts=True)
             num_intervals = len(counts)
-            mu = rate * args.delta
-            theo_freqs = [num_intervals * poisson_pmf(k, mu) for k in values]
+            mu: float = rate * args.delta
+            theo_freqs: List[float] = [num_intervals * poisson_pmf(k, mu) for k in values]
 
             plt.figure()
-            plt.bar(values, freqs, width=0.8, alpha=0.6, label='Empirical')
-            plt.plot(values, theo_freqs, marker='o', linestyle='-', label='Theoretical')
+            plt.bar(
+                values,
+                freqs,
+                width=0.8,
+                alpha=0.6,
+                label='Empirical',
+                color='royalblue'  # pastel/navy-ish color
+            )
+            plt.plot(
+                values,
+                theo_freqs,
+                marker='o',
+                linestyle='-',
+                label='Theoretical',
+                color='salmon'
+            )
             plt.xlabel('Events per interval')
             plt.ylabel('Number of intervals')
-            plt.title(f'λ={rate}, N={N}, Δ={args.delta}')
+            plt.title(f'λ={rate}, N={N}')
             plt.legend()
 
-            ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-            fn = f"hist_vs_poisson_l{rate}_N{N}_{ts}.png"
-            path = os.path.join(args.output_dir, fn)
+            ts: str = datetime.now().strftime('%Y%m%d_%H%M%S')
+            fn: str = f"hist_vs_poisson_l{rate}_N{N}_{ts}.png"
+            path: str = os.path.join(args.output_dir, fn)
             plt.tight_layout()
             plt.savefig(path)
             plt.close()
             print(f"Saved plot: {path}")
 
 if __name__ == "__main__":
-    main()
-
+    main() == "__main__"

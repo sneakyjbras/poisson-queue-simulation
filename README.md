@@ -37,6 +37,8 @@ Run `main.py` with desired parameters. The script supports:
 * `--save-plots`: flag to save overlay plots
 * `--output-dir`: directory for saved plots (default: `histograms`)
 
+An example can be found in the root directory named `run_example.sh`.
+
 ### Suggested Parameter Sweep
 
 To cover a broad range, you can use:

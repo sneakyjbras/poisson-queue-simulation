@@ -3,9 +3,9 @@
 # Bash script to sweep Poisson process simulations with varied λ and N
 
 # Discrete λ values
-RATES=(0.1 0.2 0.5 1.0 2.0 5.0 10.0 20.0 50.0)
+RATES=(0.5 1.0 2.0 5.0 10.0 20.0 25.0 50.0 75.0 100.0)
 # Discrete N values
-NUM_EVENTS=(10 50 100 500 1000 5000 10000 50000)
+NUM_EVENTS=(10 50 100 250 500 750 1000 2500 5000 7500 10000 25000 50000)
 
 # Other parameters
 WORKERS=16

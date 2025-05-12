@@ -16,6 +16,7 @@ def main() -> None:
     # Seed NumPy RNG if provided
     if config.seed is not None:
         import numpy as np
+
         np.random.seed(config.seed)
 
     manager: SimulationManager = SimulationManager(config)

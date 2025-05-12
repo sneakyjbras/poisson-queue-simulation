@@ -10,6 +10,7 @@ def main() -> None:
     cfg: Config = Config.from_cli()
     if cfg.seed is not None:
         import numpy as np
+
         np.random.seed(cfg.seed)
 
     # Delegate all simulation work to SimulationManager

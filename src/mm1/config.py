@@ -1,4 +1,3 @@
-# config.py
 import argparse
 from dataclasses import dataclass
 from typing import List, Optional
@@ -22,8 +21,8 @@ class Config:
     seed: Optional[int]
 
     @staticmethod
-    def from_cli() -> "Config":
-        parser = argparse.ArgumentParser(
+    def from_cli() -> Config:
+        parser: argparse.ArgumentParser = argparse.ArgumentParser(
             description="Sweep λ and μ to observe resulting average queue sizes."
         )
         parser.add_argument(
@@ -52,7 +51,7 @@ class Config:
         parser.add_argument(
             "--seed", type=int, default=None, help="Random seed (optional)."
         )
-        args = parser.parse_args()
+        args: argparse.Namespace = parser.parse_args()
         return Config(
             lambda_values=args.lambda_values,
             mu_values=args.mu_values,

@@ -1,9 +1,7 @@
-# mm1_sim.py
-
 import heapq
 import random
 from collections import deque
-from typing import List, Optional, Tuple
+from typing import Deque, List, Optional, Tuple
 
 
 class MM1Sim:
@@ -28,6 +26,7 @@ class MM1Sim:
         self.lam: float = lam
         self.mu: float = mu
         self.max_events: int = max_events
+        self.seed: Optional[int] = seed
         if seed is not None:
             random.seed(seed)
 
@@ -38,7 +37,7 @@ class MM1Sim:
 
         # Server state & queue of arrival times
         server_busy: bool = False
-        queue: deque[float] = deque()
+        queue: Deque[float] = deque()
 
         # Statistics
         t: float = 0.0
@@ -62,7 +61,7 @@ class MM1Sim:
 
             if event == "arrival":
                 # Schedule next arrival
-                next_arrival = t + random.expovariate(self.lam)
+                next_arrival: float = t + random.expovariate(self.lam)
                 heapq.heappush(pending, (next_arrival, "arrival"))
 
                 if not server_busy:
@@ -70,7 +69,7 @@ class MM1Sim:
                     server_busy = True
                     arrival_current = t
                     service_start = t
-                    departure_time = t + random.expovariate(self.mu)
+                    departure_time: float = t + random.expovariate(self.mu)
                     heapq.heappush(pending, (departure_time, "departure"))
                 else:
                     # Join queue
@@ -102,10 +101,10 @@ class MM1Sim:
         t_end = t_end or t
 
         # Compute metrics
-        duration = t_end if t_end > 0 else 1.0
-        avg_N = area_N / duration
-        utilization = busy_time / duration
-        E_T_sys = total_system / completed if completed > 0 else 0.0
-        E_T_q = total_wait / completed if completed > 0 else 0.0
+        duration: float = t_end if t_end > 0 else 1.0
+        avg_N: float = area_N / duration
+        utilization: float = busy_time / duration
+        E_T_sys: float = total_system / completed if completed > 0 else 0.0
+        E_T_q: float = total_wait / completed if completed > 0 else 0.0
 
         return avg_N, E_T_sys, E_T_q, utilization

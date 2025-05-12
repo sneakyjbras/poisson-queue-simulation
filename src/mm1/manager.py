@@ -1,6 +1,5 @@
-# manager.py
-from concurrent.futures import ProcessPoolExecutor
-from typing import List
+from concurrent.futures import Future, ProcessPoolExecutor
+from typing import List, Tuple
 
 from config import Config
 from mm1_sim import MM1Sim
@@ -39,14 +38,18 @@ class SimulationManager:
         """
         Run simulations for all λ and μ combinations in parallel and collect results.
         """
-        tasks = [
+        tasks: List[Tuple[float, float]] = [
             (lam, mu)
             for lam in self.config.lambda_values
             for mu in self.config.mu_values
         ]
         results: List[Result] = []
+
         with ProcessPoolExecutor() as executor:
-            futures = [executor.submit(self.run_one, lam, mu) for lam, mu in tasks]
+            futures: List[Future[Result]] = [
+                executor.submit(self.run_one, lam, mu) for lam, mu in tasks
+            ]
             for future in futures:
                 results.append(future.result())
+
         return results

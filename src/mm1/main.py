@@ -8,18 +8,21 @@ from result import Result
 
 def main() -> None:
     # Parse CLI and set RNG seed
-    cfg = Config.from_cli()
+    cfg: Config = Config.from_cli()
     if cfg.seed is not None:
         random.seed(cfg.seed)
 
     # Delegate all simulation work to SimulationManager
-    manager = SimulationManager(cfg)
+    manager: SimulationManager = SimulationManager(cfg)
     results: List[Result] = manager.run_all()
 
     # Print formatted table of results with sparser, human-readable large numbers
-    header = f"{'λ':>8} {'μ':>10} {'E[N]_sim':>15} {'E[T_sys]':>15} {'E[T_q]':>15} {'Util%':>10}"
+    header: str = (
+        f"{'λ':>8} {'μ':>10} {'E[N]_sim':>15} {'E[T_sys]':>15} {'E[T_q]':>15} {'Util%':>10}"
+    )
     print(header)
     print("=" * len(header))
+
     for r in results:
         # Use thousands separators or scientific notation for large numbers
         print(

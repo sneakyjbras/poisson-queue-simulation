@@ -1,9 +1,9 @@
 # mm1_sim.py
 
-import random
 import heapq
+import random
 from collections import deque
-from typing import Optional, Tuple, List
+from typing import List, Optional, Tuple
 
 
 class MM1Sim:
@@ -34,7 +34,7 @@ class MM1Sim:
     def simulate(self) -> Tuple[float, float, float, float]:
         # Event heap: (time, type) where type is 'arrival' or 'departure'
         pending: List[Tuple[float, str]] = []
-        heapq.heappush(pending, (0.0, 'arrival'))
+        heapq.heappush(pending, (0.0, "arrival"))
 
         # Server state & queue of arrival times
         server_busy: bool = False
@@ -60,10 +60,10 @@ class MM1Sim:
             last_t = t_next
             t = t_next
 
-            if event == 'arrival':
+            if event == "arrival":
                 # Schedule next arrival
                 next_arrival = t + random.expovariate(self.lam)
-                heapq.heappush(pending, (next_arrival, 'arrival'))
+                heapq.heappush(pending, (next_arrival, "arrival"))
 
                 if not server_busy:
                     # Begin service immediately
@@ -71,7 +71,7 @@ class MM1Sim:
                     arrival_current = t
                     service_start = t
                     departure_time = t + random.expovariate(self.mu)
-                    heapq.heappush(pending, (departure_time, 'departure'))
+                    heapq.heappush(pending, (departure_time, "departure"))
                 else:
                     # Join queue
                     queue.append(t)
@@ -92,7 +92,7 @@ class MM1Sim:
                     total_wait += t - arrival_current
                     service_start = t
                     departure_time = t + random.expovariate(self.mu)
-                    heapq.heappush(pending, (departure_time, 'departure'))
+                    heapq.heappush(pending, (departure_time, "departure"))
                     server_busy = True
                 else:
                     # No one waiting
@@ -109,4 +109,3 @@ class MM1Sim:
         E_T_q = total_wait / completed if completed > 0 else 0.0
 
         return avg_N, E_T_sys, E_T_q, utilization
-

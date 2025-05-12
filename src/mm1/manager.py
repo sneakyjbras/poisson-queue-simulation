@@ -11,6 +11,7 @@ class SimulationManager:
     """
     Coordinates running M/M/1 simulations in parallel based on the given Config.
     """
+
     def __init__(self, config: Config) -> None:
         self.config: Config = config
 
@@ -25,7 +26,14 @@ class SimulationManager:
             seed=self.config.seed,
         )
         avg_N, E_T_sys, E_T_q, util = sim.simulate()
-        return Result(lam=lam, mu=mu, avg_N=avg_N, E_T_system=E_T_sys, E_T_queue=E_T_q, utilization=util)
+        return Result(
+            lam=lam,
+            mu=mu,
+            avg_N=avg_N,
+            E_T_system=E_T_sys,
+            E_T_queue=E_T_q,
+            utilization=util,
+        )
 
     def run_all(self) -> List[Result]:
         """
@@ -42,4 +50,3 @@ class SimulationManager:
             for future in futures:
                 results.append(future.result())
         return results
-

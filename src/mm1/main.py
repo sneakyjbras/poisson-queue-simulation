@@ -17,9 +17,7 @@ def main() -> None:
     results: List[Result] = manager.run_all()
 
     # Print formatted table of results with sparser, human-readable large numbers
-    header = (
-        f"{'λ':>8} {'μ':>10} {'E[N]_sim':>15} {'E[T_sys]':>15} {'E[T_q]':>15} {'Util%':>10}"
-    )
+    header = f"{'λ':>8} {'μ':>10} {'E[N]_sim':>15} {'E[T_sys]':>15} {'E[T_q]':>15} {'Util%':>10}"
     print(header)
     print("=" * len(header))
     for r in results:
@@ -31,5 +29,5 @@ def main() -> None:
         print()  # blank line for sparser output
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

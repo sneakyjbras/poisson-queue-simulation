@@ -5,7 +5,6 @@ from math import ceil
 from typing import List, Tuple
 
 import numpy as np
-
 from config import Config
 from histogram import Histogram
 from poisson_sim import PoissonSim

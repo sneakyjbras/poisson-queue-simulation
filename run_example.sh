@@ -11,18 +11,20 @@ NUM_EVENTS=(10 50 100 250 500 750 1000 2500 5000 7500 10000 25000 50000)
 WORKERS=16
 DELTA=1.0
 OUTPUT_DIR="poisson_sweep"
+SEED=42
 
 # Ensure output directory exists
 mkdir -p "$OUTPUT_DIR"
 
 # Run the Python script with arrays
-python src/main.py \
+python src/poisson/main.py \
   --rates "${RATES[@]}" \
   --num-events "${NUM_EVENTS[@]}" \
   --delta $DELTA \
   --workers $WORKERS \
   --save-plots \
-  --output-dir $OUTPUT_DIR
+  --output-dir $OUTPUT_DIR \
+  --seed $SEED
 
 echo "Sweep finished. Plots saved in $OUTPUT_DIR/"
 

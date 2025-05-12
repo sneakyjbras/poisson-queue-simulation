@@ -13,6 +13,11 @@ from result import Result  # Assuming this exists for type hinting
 
 def main() -> None:
     config: Config = Config.from_cli()
+    # Seed NumPy RNG if provided
+    if config.seed is not None:
+        import numpy as np
+        np.random.seed(config.seed)
+
     manager: SimulationManager = SimulationManager(config)
     results: List[SimulationResult] = manager.run_all()
 

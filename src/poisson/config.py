@@ -27,6 +27,7 @@ class Config:
     save_plots: bool
     output_dir: str
     superimpose: bool
+    seed: int
 
     @staticmethod
     def from_cli() -> "Config":
@@ -76,6 +77,12 @@ class Config:
             action="store_true",
             help="Enable superposition: combine multiple processes into one simulation",
         )
+        parser.add_argument(
+            "--seed",
+            type=int,
+            default=None,
+            help="Random seed (optional).",
+        )
         args = parser.parse_args()
         return Config(
             rates=args.rates,
@@ -86,4 +93,5 @@ class Config:
             save_plots=args.save_plots,
             output_dir=args.output_dir,
             superimpose=args.superimpose,
+            seed=args.seed,
         )

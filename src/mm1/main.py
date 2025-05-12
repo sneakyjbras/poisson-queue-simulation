@@ -1,4 +1,3 @@
-import random
 from typing import List
 
 from config import Config
@@ -10,7 +9,8 @@ def main() -> None:
     # Parse CLI and set RNG seed
     cfg: Config = Config.from_cli()
     if cfg.seed is not None:
-        random.seed(cfg.seed)
+        import numpy as np
+        np.random.seed(cfg.seed)
 
     # Delegate all simulation work to SimulationManager
     manager: SimulationManager = SimulationManager(cfg)

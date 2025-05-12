@@ -8,7 +8,8 @@ class Result:
     """
     lam: float
     mu: float
-    target_queue_size: float
-    E_T_system: float
-    E_T_queue: float
-    utilization: float
+    avg_N: float         # time-averaged number in system
+    E_T_system: float    # avg time in system per packet
+    E_T_queue: float     # avg time in queue per packet
+    utilization: float   # fraction of time server busy
+

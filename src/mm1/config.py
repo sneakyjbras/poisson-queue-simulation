@@ -6,58 +6,49 @@ from typing import List, Optional
 @dataclass
 class Config:
     """
-    Configuration for the M/M/1 queue simulation loaded from CLI arguments.
-    
+    CLI configuration for M/M/1 experiments.
+
     Attributes:
-        lambda_values: List of arrival rates (λ) to simulate.
-        target_queue_sizes: List of target average queue sizes (E[N]) to simulate.
-        sim_time: Total simulation time horizon.
-        seed: Optional random seed for reproducibility.
+        lambda_values: list of arrival rates to test
+        mu_values: list of service rates to test
+        num_events: number of departure events to simulate
+        seed: random seed for reproducibility
     """
     lambda_values: List[float]
-    target_queue_sizes: List[float]
-    sim_time: float
+    mu_values: List[float]
+    num_events: int
     seed: Optional[int]
 
     @staticmethod
     def from_cli() -> "Config":
-        """
-        Parse command-line arguments and create a Config instance.
-        
-        :return: Config object populated with CLI parameters.
-        """
-        parser = argparse.ArgumentParser(description="Simulate an M/M/1 queue for given parameters.")
-        parser.add_argument(
-            "--lambda-values",
-            type=float,
-            nargs="+",
-            required=True,
-            help="One or more arrival rate (λ) values."
+        parser = argparse.ArgumentParser(
+            description="Sweep λ and μ to observe resulting average queue sizes."
         )
         parser.add_argument(
-            "--target-queue-sizes",
-            type=float,
-            nargs="+",
-            required=True,
-            help="One or more target average queue sizes (E[N]) for simulation."
+            "--lambda-values", "-l",
+            type=float, nargs="+", required=True,
+            help="Arrival rates λ to test."
         )
         parser.add_argument(
-            "--sim-time",
-            type=float,
-            required=True,
-            help="Total simulation time horizon."
+            "--mu-values", "-m",
+            type=float, nargs="+", required=True,
+            help="Service rates μ to test."
+        )
+        parser.add_argument(
+            "--num-events", "-n",
+            type=int, required=True,
+            help="Number of departure events to simulate."
         )
         parser.add_argument(
             "--seed",
-            type=int,
-            default=None,
-            help="Optional random seed for reproducibility."
+            type=int, default=None,
+            help="Random seed (optional)."
         )
         args = parser.parse_args()
         return Config(
             lambda_values=args.lambda_values,
-            target_queue_sizes=args.target_queue_sizes,
-            sim_time=args.sim_time,
-            seed=args.seed
+            mu_values=args.mu_values,
+            num_events=args.num_events,
+            seed=args.seed,
         )
 

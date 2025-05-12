@@ -1,51 +1,35 @@
-# main.py
 import random
 from typing import List
+
 from config import Config
-from mm1_sim import MM1Sim
+from manager import SimulationManager
 from result import Result
 
+
 def main() -> None:
-    """
-    Parse CLI arguments, run M/M/1 simulations for each scenario, collect results,
-    and then print them in a structured way.
-    """
-    config = Config.from_cli()
-    if config.seed is not None:
-        random.seed(config.seed)
+    # Parse CLI and set RNG seed
+    cfg = Config.from_cli()
+    if cfg.seed is not None:
+        random.seed(cfg.seed)
 
-    results: List[Result] = []
+    # Delegate all simulation work to SimulationManager
+    manager = SimulationManager(cfg)
+    results: List[Result] = manager.run_all()
 
-    for lam in config.lambda_values:
-        for target in config.target_queue_sizes:
-            if target <= 0:
-                continue
-            rho = target / (1 + target)
-            if lam == 0:
-                # trivial empty system
-                results.append(Result(lam, float('nan'), target, 0.0, 0.0, 0.0))
-                continue
-            mu = lam / rho
-            sim = MM1Sim(lam=lam, mu=mu, sim_time=config.sim_time, seed=None)
-            E_T_system, E_T_queue, utilization = sim.simulate()
-            results.append(
-                Result(
-                    lam=lam,
-                    mu=mu,
-                    target_queue_size=target,
-                    E_T_system=E_T_system,
-                    E_T_queue=E_T_queue,
-                    utilization=utilization,
-                )
-            )
-
-    # Print a table of results
-    print(f"{'λ':>6} {'μ':>8} {'E[N]ₜₐr₉':>8} {'E[T_sys]':>10} {'E[T_q]':>10} {'Util%':>8}")
-    print("-" * 56)
+    # Print formatted table of results with sparser, human-readable large numbers
+    header = (
+        f"{'λ':>8} {'μ':>10} {'E[N]_sim':>15} {'E[T_sys]':>15} {'E[T_q]':>15} {'Util%':>10}"
+    )
+    print(header)
+    print("=" * len(header))
     for r in results:
-        print(f"{r.lam:6.2f} {r.mu:8.2f} {r.target_queue_size:8.0f} "
-              f"{r.E_T_system:10.4f} {r.E_T_queue:10.4f} {r.utilization*100:8.2f}")
+        # Use thousands separators or scientific notation for large numbers
+        print(
+            f"{r.lam:8.2f} {r.mu:10.2f} {r.avg_N:15,.2f} "
+            f"{r.E_T_system:15,.2f} {r.E_T_queue:15,.2f} {r.utilization*100:10.2f}"
+        )
+        print()  # blank line for sparser output
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()
-

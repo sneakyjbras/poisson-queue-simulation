@@ -1,15 +1,24 @@
 # Poisson Process Simulation
 
-This project simulates a Poisson process over varying parameters and compares empirical counts per time interval against the theoretical Poisson distribution.
+This project simulates a Poisson process and a M/M/1 queue over varying parameters and compares empirical counts per time interval against the theoretical distributions.
 
 ## Directory Structure
 
 ```
 poisson-queue-simulation/
-├── src/
+├── src/poisson/
 │   ├── main.py
+│   ├── config.py
+│   ├── histogram.py
+│   ├── manager.py
+│   ├── plotter.py
 │   ├── poisson_sim.py
-│   └── histogram.py
+│   └── result.py
+├── src/mm1/
+│   ├── main.py
+│   ├── config.py
+│   ├── mm1_sim.py
+│   └── result.py
 └── README.md
 ```
 
@@ -27,6 +36,10 @@ pip install numpy matplotlib
 
 ## Usage
 
+Here is how you run each of the simulations.
+
+### Poisson Process
+
 Run `main.py` with desired parameters. The script supports:
 
 * `--rates`: one or more λ values
@@ -39,6 +52,8 @@ Run `main.py` with desired parameters. The script supports:
 
 An example can be found in the root directory named `run_example.sh`.
 
+### MM1
+
 ### Suggested Parameter Sweep
 
 To cover a broad range, you can use:
@@ -50,7 +65,7 @@ This gives 7 × 5 = 35 simulations.
 
 ### Example Command
 
-From the project root:
+From the project root for **Poisson**:
 
 ```bash
 python src/main.py \

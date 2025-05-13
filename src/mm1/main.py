@@ -1,3 +1,4 @@
+# main.py
 from typing import List
 
 from config import Config
@@ -17,20 +18,22 @@ def main() -> None:
     manager: SimulationManager = SimulationManager(cfg)
     results: List[Result] = manager.run_all()
 
-    # Print formatted table of results with sparser, human-readable large numbers
+    # Print formatted table of results with both simulated and theoretical values
     header: str = (
-        f"{'λ':>8} {'μ':>10} {'E[N]_sim':>15} {'E[T_sys]':>15} {'E[T_q]':>15} {'Util%':>10}"
+        f"{'λ':>8} {'μ':>8} "
+        f"{'E[N]_sim':>10} {'E[T_sys]_sim':>12} {'E[T_q]_sim':>12} {'Util%_sim':>10} "
+        f"{'E[N]_theo':>10} {'E[T_sys]_theo':>12} {'E[T_q]_theo':>12} {'Util%_theo':>10}"
     )
     print(header)
     print("=" * len(header))
 
     for r in results:
-        # Use thousands separators or scientific notation for large numbers
         print(
-            f"{r.lam:8.2f} {r.mu:10.2f} {r.avg_N:15,.2f} "
-            f"{r.E_T_system:15,.2f} {r.E_T_queue:15,.2f} {r.utilization*100:10.2f}"
+            f"{r.lam:8.2f} {r.mu:8.2f} "
+            f"{r.avg_N:10.2f} {r.E_T_system:12.2f} {r.E_T_queue:12.2f} {r.utilization*100:10.2f} "
+            f"{r.theo_avg_N:10.2f} {r.theo_E_T_system:12.2f} {r.theo_E_T_queue:12.2f} {r.theo_utilization*100:10.2f}"
         )
-        print()  # blank line for sparser output
+        print()
 
 
 if __name__ == "__main__":
